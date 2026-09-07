@@ -213,10 +213,13 @@ if prompt:#字符串会自动转化为布尔值，非空则为True
     # 处理流式输出
     full_response = ""
     for chunk in response:
-        if chunk.choices[0].delta.content is not None:
-            content = chunk.choices[0].delta.content
-            full_response += content
-            response_message.chat_message("assistant",avatar="./resources/niulai.jpg").write(full_response)
+    if chunk.choices and chunk.choices[0].delta.content is not None:
+        content = chunk.choices[0].delta.content
+        full_response += content
+        response_message.chat_message(
+            "assistant",
+            avatar="./resources/niulai.jpg"
+        ).write(full_response)
     print("最终回复：", full_response)
     # 将AI大模型的输出添加到聊天记录中
     st.session_state.messages.append({"role": "assistant", "content": full_response})
