@@ -201,7 +201,7 @@ if prompt:#字符串会自动转化为布尔值，非空则为True
             {"role": "system", "content": system_prompt %(st.session_state.nick_name, st.session_state.nature)},
             *st.session_state.messages
         ],
-        stream=True,
+        stream=False,
     )
     print("======== 已经拿到 response ========")
     # 输出大模型返回的结果(流式输出)
@@ -210,16 +210,12 @@ if prompt:#字符串会自动转化为布尔值，非空则为True
     # print('--------------->AI大模型返回的结果：',response.choices[0].message.content)
     # st.chat_message("assistant",avatar="./resources/niulai.jpg").write(response.choices[0].message.content)
 
-    # 处理流式输出
-    full_response = ""
-    for chunk in response:
-        if chunk.choices and chunk.choices[0].delta.content is not None:
-            content = chunk.choices[0].delta.content
-            full_response += content
-            response_message.chat_message(
-                "assistant",
-                avatar="./resources/niulai.jpg"
-            ).write(full_response)
+    full_response = response.choices[0].message.content
+    
+    response_message.chat_message(
+        "assistant",
+        avatar="./resources/niulai.jpg"
+    ).write(full_response)
     print("最终回复：", full_response)
     # 将AI大模型的输出添加到聊天记录中
     st.session_state.messages.append({"role": "assistant", "content": full_response})
