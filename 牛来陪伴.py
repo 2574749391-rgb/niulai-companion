@@ -127,10 +127,11 @@ for message in st.session_state.messages:
         st.chat_message("user").write(message["content"])
 
 
-# 创建与AI大模型交互的客户端对象（DEEPSEEK_API_KEY 环境变量的名字，值就是Deepseek的API_KEY的 ）
+# 创建与AI大模型交互的客户端对象
 client = OpenAI(
-    api_key=os.environ.get('DEEPSEEK_API_KEY'),
-    base_url="https://api.deepseek.com")
+    api_key=st.secrets["platform_api"]["api_key"],
+    base_url=st.secrets["platform_api"]["base_url"]
+)
 
 
 # 左侧的侧边栏-with 是streamlit上下文管理器
@@ -193,9 +194,9 @@ if prompt:#字符串会自动转化为布尔值，非空则为True
 
     # AI大模型输出
     # 调用AI大模型进行对话
-    print("======== 准备调用 DeepSeek ========")
+    print("======== 准备调用 Qwen ========")
     response = client.chat.completions.create(
-        model="deepseek-v4-pro",
+        model=st.secrets["platform_api"]["model"],
         messages=[
             {"role": "system", "content": system_prompt %(st.session_state.nick_name, st.session_state.nature)},
             *st.session_state.messages
