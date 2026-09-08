@@ -182,44 +182,45 @@ with st.sidebar:
         now = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
         st.session_state.current_session = now
 
+# ===================== 关键改动开始 =====================
 # 消息输入框
-prompt =st.chat_input("请输入你的消息")
-if prompt:#字符串会自动转化为布尔值，非空则为True
+prompt = st.chat_input("请输入你的消息")
+if prompt:  # 用户输入了消息
+    # 先把用户消息显示出来
     st.chat_message("user").write(prompt)
-    print('--------------->调用AI大模型，提示词：',prompt)
-
-    # 将用户输入的消息添加到聊天记录中
+    # 存入消息历史
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    # 调用AI时，为了防止上下文太长，只取最近6条消息（不含系统提示词）
+    # 如果总消息数少于6条，就全部发送
+    recent_messages = st.session_state.messages[-6:] if len(st.session_state.messages) > 6 else st.session_state.messages
 
-    # AI大模型输出
-    # 调用AI大模型进行对话
-    print("======== 准备调用 Qwen ========")
-    response = client.chat.completions.create(
-        model=st.secrets["platform_api"]["model"],
-        messages=[
-            {"role": "system", "content": system_prompt %(st.session_state.nick_name, st.session_state.nature)},
-            *st.session_state.messages
-        ],
-        stream=False,
-    )
-    print("======== 已经拿到 response ========")
-    # 输出大模型返回的结果(流式输出)
-    response_message = st.empty()  # 创建一个空的文本框
+    # 显示一个“思考中”的占位提示（可选）
+    with st.chat_message("assistant", avatar="./resources/niulai.jpg"):
+        with st.spinner("🤔 牛震正在思考..."):
+            try:
+                # 调用API
+                response = client.chat.completions.create(
+                    model=st.secrets["platform_api"]["model"],
+                    messages=[
+                        {"role": "system", "content": system_prompt % (st.session_state.nick_name, st.session_state.nature)},
+                        *recent_messages   # 只发送最近几条消息
+                    ],
+                    stream=False,
+                )
+                full_response = response.choices[0].message.content
 
-    # print('--------------->AI大模型返回的结果：',response.choices[0].message.content)
-    # st.chat_message("assistant",avatar="./resources/niulai.jpg").write(response.choices[0].message.content)
+                # 显示回复
+                st.write(full_response)
 
-    full_response = response.choices[0].message.content
-    
-    response_message.chat_message(
-        "assistant",
-        avatar="./resources/niulai.jpg"
-    ).write(full_response)
-    print("最终回复：", full_response)
-    # 将AI大模型的输出添加到聊天记录中
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+                # 存入消息历史
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
 
+            except Exception as e:
+                # 这里会把具体的报错显示在网页上，再也不怕“没反应”了
+                st.error(f"❌ AI 接口调用失败，原因：{e}")
+                # 注意：出错时不要把错误信息存入消息历史，以免污染对话
 
-    # 保存对话信息
+    # 保存会话（把更新后的消息列表存起来）
     save_session()
+# ===================== 关键改动结束 =====================
